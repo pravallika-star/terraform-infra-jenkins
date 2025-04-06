@@ -8,7 +8,3 @@ variable "instance_type" {
   type = string
 }
 
-variable "ami_id" {
-  description = "ami value"
-  type = string
-}
