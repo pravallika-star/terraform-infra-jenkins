@@ -1,0 +1,46 @@
+pipeline{
+    agent any
+    environment {
+        creds = credentials("aws-key")
+    }
+    parameters {
+        choice choices: ['t2.micro', 't2.medium'], description: 'select the instance type', name: 'instance_type'
+        choice choices: ['us-east-1', 'us-east-2'], description: 'select the region', name: 'aws_region'
+    }
+    stages{
+        stage('checkout stage'){
+            steps{
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/pravallika-star/terraform-infra-jenkins.git']])
+            }
+        }
+        stage('terraform init'){
+            steps{
+                sh ('terraform init')
+            }
+        }
+        stage('terraform plan'){
+            steps{
+                sh """
+                terraform plan \
+                -var="aws_region=${params.aws_region}" \
+                -var="instance_type=${params.instance_type}"
+                """
+            }
+        }
+        stage('Approval'){
+            steps{
+                input 'please see the plan output and proceed if everything looks good'
+            }
+        }
+        stage('terraform apply'){
+            steps{
+                sh """
+                terraform apply \
+                -auto-approve \
+                -var="aws_region=${params.aws_region}" \
+                -var="instance_type=${params.instance_type}"
+                """
+            }
+        }
+    }
+}
